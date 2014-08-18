@@ -1,0 +1,22 @@
+<%
+hide_modules = @settings['hide_modules'] || []
+descriptions = @settings['description'] || []
+%>
+<p>
+  <label><%= l(:field_module_extend_default_hide) %></label>
+  <span style="font-weight: bold;"><%= l(:field_description) %></span>
+</p>
+<% Redmine::AccessControl.available_project_modules.each do |module_name| %>
+<p>
+  <label>
+    <%= l_or_humanize(module_name, :prefix => "project_module_") %>
+    <%= check_box_tag("settings[hide_modules][]", module_name.to_s,
+                      hide_modules.include?(module_name.to_s)) %>
+  </label>
+  <%= text_field_tag("settings[description][#{module_name}]",
+                     descriptions[module_name.to_s],
+                     :style => 'width: 90%;') %>
+</p>
+<% end %><%# available_project_modules.each %>
+
+<p><%= check_all_links 'settings' %></p>

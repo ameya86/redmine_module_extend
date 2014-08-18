@@ -1,0 +1,76 @@
+<% if controller_name == 'projects' &&
+      %w(new create settings).include?(action_name) &&
+      @project &&
+      User.current.allowed_to?(:select_project_modules, @project) %>
+<% 
+hide_modules = Setting.plugin_redmine_module_extend['hide_modules'] || []
+descriptions = Setting.plugin_redmine_module_extend['description'] || []
+param_name = (action_name == 'settings')? 'enabled_module_names[]' : 'project[enabled_module_names][]'
+has_hide_modules = (hide_modules - @project.enabled_module_names).present?
+ %>
+<div id="module_extend" style="display: none;">
+<table>
+  <thead>
+    <tr>
+      <th><%= l(:label_module_plural) %></th>
+      <th><%= l(:field_description) %></th>
+    </tr>
+  </thead>
+  <tbody>
+  <% Redmine::AccessControl.available_project_modules.each do |module_name| %>
+    <tr <%= raw (hide_modules.include?(module_name.to_s) && !@project.module_enabled?(module_name))? 'class="hide_module" style="display: none;"' : 'class="show_module"' %>>
+      <td>
+        <label>
+          <%= check_box_tag(param_name, module_name, @project.module_enabled?(module_name), :id => nil) -%>
+          <%= l_or_humanize(module_name, :prefix => "project_module_") %>
+        </label>
+      </td>
+      <td>
+        <%= descriptions[module_name.to_s] %>
+      </td>
+    </tr>
+  <% end %><%# available_project_modules.each %>
+  <% if has_hide_modules %>
+  <tr class="show_module_button">
+    <td style="text-align: center;">:</td>
+    <td style="text-align: center;">:</td>
+  </tr>
+  <% end %>
+  </tbody>
+</table>
+<% if has_hide_modules %>
+<div class="show_module_button" style="float: right;">
+  <%= link_to_function(l(:button_module_extend_show), 'show_module_extend();') %>
+<% end %>
+</div>
+</div>
+
+<%= javascript_tag do %>
+function replace_module_extend() {
+<% if action_name == 'settings' %>
+  var module_form = $('#modules-form>fieldset');
+  var module_children = $('#modules-form>fieldset>p');
+<% else %><%# if action_name == 'settings' %>
+  var module_form = $('form#new_project>fieldset:first-of-type');
+  var module_children = $('form#new_project>fieldset:first-of-type>label');
+<% end %><%# if action_name == 'settings' %>
+  if (!module_form) {
+    return;
+  }
+  module_children.remove();
+  module_form.append($('#module_extend'));
+  $('#module_extend').show();
+<% if action_name != 'settings' %>
+  module_form.removeClass("tabular");
+<% end %><%# if action_name != 'settings' %>
+}
+
+function show_module_extend() {
+  $('#module_extend tr.hide_module').show();
+  $('.show_module_button').hide();
+}
+
+replace_module_extend();
+<% end %><%# javascript_tag %>
+
+<% end %><%# if @project.allowed_to? %>
